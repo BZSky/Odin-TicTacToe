@@ -43,9 +43,17 @@ const gameboard = (function Gameboard() {
     console.log(boardWithCellValues);
   };
 
+  const resetBoard = () => {
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < columns; j++) {
+        board[i][j].addToken(0);
+      }
+    }
+  };
+
   // Provide an interface for the rest of our
   // application to interact with the board
-  return { getBoard, makeAmove, printBoard, boardIsFull };
+  return { getBoard, makeAmove, printBoard, boardIsFull, resetBoard };
 })();
 
 function Cell() {
@@ -149,9 +157,11 @@ const game = (function GameController(
 
     if (gameboard.boardIsFull()) {
       console.log("It's a draw!");
+      gameboard.resetBoard();
       return;
     } else if (checkForWinner()) {
       console.log(`${getActivePlayer().name} wins!`);
+      gameboard.resetBoard();
       return;
     } else {
       switchPlayerTurn();
@@ -165,4 +175,56 @@ const game = (function GameController(
     playRound,
     getActivePlayer,
   };
+})();
+
+const interface = (function ScreenController() {
+  const playerTurnDiv = document.querySelector(".turn");
+  const boardDiv = document.querySelector(".board");
+
+  const updateScreen = () => {
+    // clear the board
+    boardDiv.textContent = "";
+
+    // get the newest version of the board and player turn
+    const board = gameboard.getBoard();
+    const activePlayer = game.getActivePlayer();
+
+    // Display player's turn
+    playerTurnDiv.textContent = `${activePlayer.name}'s turn...`;
+
+    // Render board squares
+    board.forEach((row) => {
+      row.forEach((cell, index) => {
+        // Anything clickable should be a button!!
+        const cellButton = document.createElement("button");
+        cellButton.classList.add("cell");
+        // Create a data attribute to identify the row & column
+        // This makes it easier to pass into our `playRound` function
+        cellButton.dataset.row = board.indexOf(row);
+        cellButton.dataset.column = index;
+        cellButton.dataset.player = cell.getValue();
+        if (cellButton.dataset.player === "1") {
+          cellButton.textContent = "x";
+        } else if (cellButton.dataset.player === "2") {
+          cellButton.textContent = "o";
+        }
+        boardDiv.appendChild(cellButton);
+      });
+    });
+  };
+
+  // Add event listener for the board
+  function clickHandlerBoard(e) {
+    const selectedRow = e.target.dataset.row;
+    const selectedColumn = e.target.dataset.column;
+    // Make sure I've clicked a cell and not the gaps in between
+    if (!selectedRow && !selectedColumn) return;
+
+    game.playRound(selectedRow, selectedColumn);
+    updateScreen();
+  }
+  boardDiv.addEventListener("click", clickHandlerBoard);
+
+  // Initial render
+  updateScreen();
 })();
