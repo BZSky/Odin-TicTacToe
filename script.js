@@ -3,7 +3,7 @@ const gameboard = (function Gameboard() {
   const columns = rows;
   const board = [];
 
-  // 2d array represents the state of the game board
+  // 2D array represents the state of the game board
   // Row 0 represents the top row and
   // Column 0 represents the left-most column.
 
@@ -21,7 +21,6 @@ const gameboard = (function Gameboard() {
     if (board[row][column].getValue() !== 0) return false;
 
     board[row][column].addToken(player);
-    return console.log(`Token ${player} added to row ${row}, column ${column}`);
   };
 
   const boardIsFull = () => {
@@ -35,14 +34,6 @@ const gameboard = (function Gameboard() {
     return true;
   };
 
-  // Print board to console. Not needed in UI version. TBRemoved
-  const printBoard = () => {
-    const boardWithCellValues = board.map((row) =>
-      row.map((cell) => cell.getValue())
-    );
-    console.log(boardWithCellValues);
-  };
-
   const resetBoard = () => {
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < columns; j++) {
@@ -53,7 +44,7 @@ const gameboard = (function Gameboard() {
 
   // Provide an interface for the rest of our
   // application to interact with the board
-  return { getBoard, makeAmove, printBoard, boardIsFull, resetBoard };
+  return { getBoard, makeAmove, boardIsFull, resetBoard };
 })();
 
 function Cell() {
@@ -94,11 +85,6 @@ const game = (function GameController(
     activePlayer = activePlayer === players[0] ? players[1] : players[0];
   };
   const getActivePlayer = () => activePlayer;
-
-  const printNewRound = () => {
-    gameboard.printBoard();
-    console.log(`${getActivePlayer().name}'s turn.`);
-  };
 
   const checkForWinner = () => {
     const board = gameboard.getBoard();
@@ -142,34 +128,29 @@ const game = (function GameController(
     return false;
   };
 
+  // CONSOLE LOGS MUST GO. THEY SERVED THEIR PURPOSE
+
   const playRound = (row, column) => {
-    console.log(
-      `Dropping ${
-        getActivePlayer().name
-      }'s token into row ${row}, column ${column}...`
-    );
     const result = gameboard.makeAmove(row, column, getActivePlayer().token);
 
     if (result === false) {
-      console.log("Invalid move. Please choose an empty cell.");
+      interface.showPopup("Invalid move. Please choose an empty cell.");
       return;
     }
 
     if (gameboard.boardIsFull()) {
-      console.log("It's a draw!");
+      interface.showPopup("It's a draw!");
       gameboard.resetBoard();
       return;
     } else if (checkForWinner()) {
-      console.log(`${getActivePlayer().name} wins!`);
+      interface.showPopup(`${getActivePlayer().name} wins!`);
       gameboard.resetBoard();
       return;
     } else {
       switchPlayerTurn();
-      printNewRound();
+      interface.printNewRound();
     }
   };
-
-  printNewRound();
 
   return {
     playRound,
@@ -213,6 +194,27 @@ const interface = (function ScreenController() {
     });
   };
 
+  const showPopup = (message) => {
+    const container = document.getElementById("popup-container");
+    const popup = document.createElement("div");
+    popup.classList.add("popup");
+    popup.textContent = message;
+
+    container.appendChild(popup);
+
+    // Fade out after 3 seconds
+    setTimeout(() => {
+      popup.style.opacity = "0";
+      setTimeout(() => {
+        popup.remove();
+      }, 1000); // Wait for fade out to complete before removing
+    }, 3000);
+  };
+
+  const printNewRound = () => {
+    showPopup(`${game.getActivePlayer().name}'s turn.`);
+  };
+
   // Add event listener for the board
   function clickHandlerBoard(e) {
     const selectedRow = e.target.dataset.row;
@@ -227,4 +229,6 @@ const interface = (function ScreenController() {
 
   // Initial render
   updateScreen();
+  showPopup("Let the game begin! Player One, go!");
+  return { showPopup, printNewRound };
 })();
