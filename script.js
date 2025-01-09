@@ -3,7 +3,7 @@ const gameboard = (function Gameboard() {
   const columns = rows;
   const board = [];
 
-  // 2d array represents the state of the game board
+  // 2D array represents the state of the game board
   // Row 0 represents the top row and
   // Column 0 represents the left-most column.
 
@@ -21,7 +21,6 @@ const gameboard = (function Gameboard() {
     if (board[row][column].getValue() !== 0) return false;
 
     board[row][column].addToken(player);
-    return console.log(`Token ${player} added to row ${row}, column ${column}`);
   };
 
   const boardIsFull = () => {
@@ -35,17 +34,20 @@ const gameboard = (function Gameboard() {
     return true;
   };
 
-  // Print board to console. Not needed in UI version. TBRemoved
-  const printBoard = () => {
-    const boardWithCellValues = board.map((row) =>
-      row.map((cell) => cell.getValue())
-    );
-    console.log(boardWithCellValues);
+  const resetBoard = () => {
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < columns; j++) {
+        board[i][j].addToken(0);
+      }
+    }
+    if (game.getActivePlayer().token === "2") {
+      game.switchPlayerTurn();
+    }
   };
 
   // Provide an interface for the rest of our
   // application to interact with the board
-  return { getBoard, makeAmove, printBoard, boardIsFull };
+  return { getBoard, makeAmove, boardIsFull, resetBoard };
 })();
 
 function Cell() {
@@ -82,15 +84,18 @@ const game = (function GameController(
 
   let activePlayer = players[0];
 
+  const changePlayerName = (playerToken, newName) => {
+    if (playerToken === "1") {
+      players[0].name = newName;
+    } else if (playerToken === "2") {
+      players[1].name = newName;
+    }
+  };
+
   const switchPlayerTurn = () => {
     activePlayer = activePlayer === players[0] ? players[1] : players[0];
   };
   const getActivePlayer = () => activePlayer;
-
-  const printNewRound = () => {
-    gameboard.printBoard();
-    console.log(`${getActivePlayer().name}'s turn.`);
-  };
 
   const checkForWinner = () => {
     const board = gameboard.getBoard();
@@ -135,34 +140,122 @@ const game = (function GameController(
   };
 
   const playRound = (row, column) => {
-    console.log(
-      `Dropping ${
-        getActivePlayer().name
-      }'s token into row ${row}, column ${column}...`
-    );
     const result = gameboard.makeAmove(row, column, getActivePlayer().token);
 
     if (result === false) {
-      console.log("Invalid move. Please choose an empty cell.");
+      interface.showPopup("Invalid move. Please choose an empty cell.");
       return;
     }
 
-    if (gameboard.boardIsFull()) {
-      console.log("It's a draw!");
+    if (checkForWinner()) {
+      interface.showPopup(`${getActivePlayer().name} wins!`);
+      gameboard.resetBoard();
       return;
-    } else if (checkForWinner()) {
-      console.log(`${getActivePlayer().name} wins!`);
+    } else if (gameboard.boardIsFull()) {
+      interface.showPopup("It's a draw!");
+      gameboard.resetBoard();
       return;
     } else {
       switchPlayerTurn();
-      printNewRound();
+      interface.printNewRound();
     }
   };
-
-  printNewRound();
 
   return {
     playRound,
     getActivePlayer,
+    switchPlayerTurn,
+    changePlayerName,
   };
+})();
+
+const interface = (function ScreenController() {
+  const playerTurnDiv = document.querySelector(".turn-header");
+  const boardDiv = document.querySelector(".board");
+  const restartBtn = document.getElementById("restart");
+
+  const updateScreen = () => {
+    // clear the board
+    boardDiv.textContent = "";
+
+    // get the newest version of the board and player turn
+    const board = gameboard.getBoard();
+    const activePlayer = game.getActivePlayer();
+
+    // Display player's turn
+    playerTurnDiv.textContent = `${activePlayer.name}'s turn...`;
+
+    // Render board squares
+    board.forEach((row) => {
+      row.forEach((cell, index) => {
+        // Anything clickable should be a button!!
+        const cellButton = document.createElement("button");
+        cellButton.classList.add("cell");
+        // Create a data attribute to identify the row & column
+        // This makes it easier to pass into our `playRound` function
+        cellButton.dataset.row = board.indexOf(row);
+        cellButton.dataset.column = index;
+        cellButton.dataset.player = cell.getValue();
+        if (cellButton.dataset.player === "1") {
+          cellButton.textContent = "x";
+        } else if (cellButton.dataset.player === "2") {
+          cellButton.textContent = "o";
+        }
+        boardDiv.appendChild(cellButton);
+      });
+    });
+  };
+
+  const showPopup = (message) => {
+    const container = document.getElementById("popup-container");
+    const overlay = document.getElementById("popup-overlay");
+    const popup = document.createElement("div");
+    popup.classList.add("popup");
+    popup.textContent = message;
+
+    container.appendChild(popup);
+
+    // Show overlay and animate pop-up
+    overlay.style.display = "block";
+    void popup.offsetWidth; // Trigger reflow for animation
+    popup.classList.add("show");
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+      popup.classList.add("fade-out");
+      setTimeout(() => {
+        popup.remove();
+        overlay.style.display = "none";
+      }, 200); // Match transition duration
+    }, 1000);
+  };
+
+  const printNewRound = () => {
+    showPopup(`${game.getActivePlayer().name}'s turn.`);
+  };
+
+  // Add event listeners for the board
+  function clickHandlerBoard(e) {
+    const selectedRow = e.target.dataset.row;
+    const selectedColumn = e.target.dataset.column;
+    // Make sure I've clicked a cell and not the gaps in between
+    if (!selectedRow && !selectedColumn) return;
+
+    game.playRound(selectedRow, selectedColumn);
+    updateScreen();
+  }
+
+  function clickHandlerRestart(e) {
+    gameboard.resetBoard();
+    updateScreen();
+    showPopup("Let the game begin! Player One, go!");
+  }
+
+  boardDiv.addEventListener("click", clickHandlerBoard);
+  restartBtn.addEventListener("click", clickHandlerRestart);
+
+  // Initial render
+  updateScreen();
+  showPopup("Let the game begin! Player One, go!");
+  return { showPopup, printNewRound };
 })();
