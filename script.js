@@ -40,6 +40,9 @@ const gameboard = (function Gameboard() {
         board[i][j].addToken(0);
       }
     }
+    if (game.getActivePlayer().token === "2") {
+      game.switchPlayerTurn();
+    }
   };
 
   // Provide an interface for the rest of our
@@ -80,6 +83,14 @@ const game = (function GameController(
   ];
 
   let activePlayer = players[0];
+
+  const changePlayerName = (playerToken, newName) => {
+    if (playerToken === "1") {
+      players[0].name = newName;
+    } else if (playerToken === "2") {
+      players[1].name = newName;
+    }
+  };
 
   const switchPlayerTurn = () => {
     activePlayer = activePlayer === players[0] ? players[1] : players[0];
@@ -128,8 +139,6 @@ const game = (function GameController(
     return false;
   };
 
-  // CONSOLE LOGS MUST GO. THEY SERVED THEIR PURPOSE
-
   const playRound = (row, column) => {
     const result = gameboard.makeAmove(row, column, getActivePlayer().token);
 
@@ -138,12 +147,12 @@ const game = (function GameController(
       return;
     }
 
-    if (gameboard.boardIsFull()) {
-      interface.showPopup("It's a draw!");
+    if (checkForWinner()) {
+      interface.showPopup(`${getActivePlayer().name} wins!`);
       gameboard.resetBoard();
       return;
-    } else if (checkForWinner()) {
-      interface.showPopup(`${getActivePlayer().name} wins!`);
+    } else if (gameboard.boardIsFull()) {
+      interface.showPopup("It's a draw!");
       gameboard.resetBoard();
       return;
     } else {
@@ -155,12 +164,15 @@ const game = (function GameController(
   return {
     playRound,
     getActivePlayer,
+    switchPlayerTurn,
+    changePlayerName,
   };
 })();
 
 const interface = (function ScreenController() {
-  const playerTurnDiv = document.querySelector(".turn");
+  const playerTurnDiv = document.querySelector(".turn-header");
   const boardDiv = document.querySelector(".board");
+  const restartBtn = document.getElementById("restart");
 
   const updateScreen = () => {
     // clear the board
@@ -196,26 +208,33 @@ const interface = (function ScreenController() {
 
   const showPopup = (message) => {
     const container = document.getElementById("popup-container");
+    const overlay = document.getElementById("popup-overlay");
     const popup = document.createElement("div");
     popup.classList.add("popup");
     popup.textContent = message;
 
     container.appendChild(popup);
 
-    // Fade out after 3 seconds
+    // Show overlay and animate pop-up
+    overlay.style.display = "block";
+    void popup.offsetWidth; // Trigger reflow for animation
+    popup.classList.add("show");
+
+    // Remove after 3 seconds
     setTimeout(() => {
-      popup.style.opacity = "0";
+      popup.classList.add("fade-out");
       setTimeout(() => {
         popup.remove();
-      }, 1000); // Wait for fade out to complete before removing
-    }, 3000);
+        overlay.style.display = "none";
+      }, 200); // Match transition duration
+    }, 1000);
   };
 
   const printNewRound = () => {
     showPopup(`${game.getActivePlayer().name}'s turn.`);
   };
 
-  // Add event listener for the board
+  // Add event listeners for the board
   function clickHandlerBoard(e) {
     const selectedRow = e.target.dataset.row;
     const selectedColumn = e.target.dataset.column;
@@ -225,7 +244,15 @@ const interface = (function ScreenController() {
     game.playRound(selectedRow, selectedColumn);
     updateScreen();
   }
+
+  function clickHandlerRestart(e) {
+    gameboard.resetBoard();
+    updateScreen();
+    showPopup("Let the game begin! Player One, go!");
+  }
+
   boardDiv.addEventListener("click", clickHandlerBoard);
+  restartBtn.addEventListener("click", clickHandlerRestart);
 
   // Initial render
   updateScreen();
