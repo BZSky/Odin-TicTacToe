@@ -75,14 +75,20 @@ const game = (function GameController(
     {
       name: playerOneName,
       token: "1",
+      score: 0,
     },
     {
       name: playerTwoName,
       token: "2",
+      score: 0,
     },
   ];
 
   let activePlayer = players[0];
+
+  const getPlayerNames = () => {
+    return players.map((player) => player.name);
+  };
 
   const changePlayerName = (playerToken, newName) => {
     if (playerToken === "1") {
@@ -96,6 +102,10 @@ const game = (function GameController(
     activePlayer = activePlayer === players[0] ? players[1] : players[0];
   };
   const getActivePlayer = () => activePlayer;
+
+  const getPlayerScores = () => {
+    return players.map((player) => player.score);
+  };
 
   const checkForWinner = () => {
     const board = gameboard.getBoard();
@@ -149,11 +159,14 @@ const game = (function GameController(
 
     if (checkForWinner()) {
       interface.showPopup(`${getActivePlayer().name} wins!`);
-      gameboard.resetBoard();
+      getActivePlayer().score++;
+      // Add continue dialog
+      interface.dialogController("win");
       return;
     } else if (gameboard.boardIsFull()) {
       interface.showPopup("It's a draw!");
-      gameboard.resetBoard();
+      // Add continue dialog
+      interface.dialogController("draw");
       return;
     } else {
       switchPlayerTurn();
@@ -165,7 +178,9 @@ const game = (function GameController(
     playRound,
     getActivePlayer,
     switchPlayerTurn,
+    getPlayerNames,
     changePlayerName,
+    getPlayerScores,
   };
 })();
 
@@ -173,6 +188,18 @@ const interface = (function ScreenController() {
   const playerTurnDiv = document.querySelector(".turn-header");
   const boardDiv = document.querySelector(".board");
   const restartBtn = document.getElementById("restart");
+  const playerOneNameBtn = document.getElementById("p1-name");
+  const playerTwoNameBtn = document.getElementById("p2-name");
+  const playerOneScore = document.querySelector(".score1");
+  const playerTwoScore = document.querySelector(".score2");
+
+  const playerNameInterface = (playerToken, newName) => {
+    if (playerToken && newName) {
+      game.changePlayerName(playerToken, newName);
+    }
+    playerOneNameBtn.textContent = game.getPlayerNames()[0];
+    playerTwoNameBtn.textContent = game.getPlayerNames()[1];
+  };
 
   const updateScreen = () => {
     // clear the board
@@ -184,6 +211,10 @@ const interface = (function ScreenController() {
 
     // Display player's turn
     playerTurnDiv.textContent = `${activePlayer.name}'s turn...`;
+
+    // Display player's score
+    playerOneScore.textContent = game.getPlayerScores()[0];
+    playerTwoScore.textContent = game.getPlayerScores()[1];
 
     // Render board squares
     board.forEach((row) => {
@@ -206,6 +237,74 @@ const interface = (function ScreenController() {
     });
   };
 
+  const dialogController = (dialogCaller) => {
+    const dialog = document.querySelector("dialog");
+    const continueButton = document.querySelector("#yes");
+    const closeButton = document.querySelector(".close-dialog");
+    let form = document.querySelectorAll(".form");
+
+    const changeName = (event) => {
+      const newName = form[0].value;
+      playerNameInterface(form.dataset.token, newName);
+      event.preventDefault();
+      form.reset();
+      dialog.close();
+    };
+
+    form.forEach((form) => form.classList.remove("active"));
+    if (
+      dialogCaller === "btn" ||
+      dialogCaller === "draw" ||
+      dialogCaller === "win"
+    ) {
+      let formId = "continue";
+      form = document.getElementById(formId);
+      form.classList.add("active");
+
+      dialog.showModal();
+    }
+    // Dynamically generate a dialog for name change
+    else if (dialogCaller === "name1") {
+      let token = "1";
+      let formId = "name-change";
+      form = document.getElementById(formId);
+
+      form.dataset.token = token;
+      form[0].attributes.placeholder.value = `Change ${
+        game.getPlayerNames()[0]
+      }'s name`;
+      form.classList.add("active");
+
+      dialog.showModal();
+    } else if (dialogCaller === "name2") {
+      let token = "2";
+      let formId = "name-change";
+      form = document.getElementById(formId);
+
+      form.dataset.token = token;
+      form[0].attributes.placeholder.value = `Change ${
+        game.getPlayerNames()[1]
+      }'s name`;
+      form.classList.add("active");
+
+      dialog.showModal();
+    }
+
+    form.addEventListener("submit", changeName);
+
+    continueButton.addEventListener("click", () => {
+      dialog.close();
+      gameboard.resetBoard();
+      updateScreen();
+      // A strange bug is happening here with the new game popup, where it duplicates on consecutive calls.
+      // Not important enough to fix right now, but I'll leave this here for future investigation.
+      //      showPopup("Let the game begin! Player One, go!");
+    });
+    closeButton.addEventListener("click", () => {
+      dialog.close();
+    });
+  };
+
   const showPopup = (message) => {
     const container = document.getElementById("popup-container");
     const overlay = document.getElementById("popup-overlay");
@@ -220,7 +319,7 @@ const interface = (function ScreenController() {
     void popup.offsetWidth; // Trigger reflow for animation
     popup.classList.add("show");
 
-    // Remove after 3 seconds
+    // Remove after 1 second
     setTimeout(() => {
       popup.classList.add("fade-out");
       setTimeout(() => {
@@ -246,16 +345,25 @@ const interface = (function ScreenController() {
   }
 
   function clickHandlerRestart(e) {
-    gameboard.resetBoard();
-    updateScreen();
-    showPopup("Let the game begin! Player One, go!");
+    dialogController("btn");
+  }
+
+  function clickHandlerNameChange(e) {
+    if (e.target.id === "p1-name") {
+      dialogController("name1");
+    } else if (e.target.id === "p2-name") {
+      dialogController("name2");
+    }
   }
 
   boardDiv.addEventListener("click", clickHandlerBoard);
   restartBtn.addEventListener("click", clickHandlerRestart);
+  playerOneNameBtn.addEventListener("click", clickHandlerNameChange);
+  playerTwoNameBtn.addEventListener("click", clickHandlerNameChange);
 
   // Initial render
+  playerNameInterface();
   updateScreen();
   showPopup("Let the game begin! Player One, go!");
-  return { showPopup, printNewRound };
+  return { showPopup, printNewRound, dialogController };
 })();

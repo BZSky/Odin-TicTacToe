@@ -11,12 +11,12 @@
     <div class="container">
       <div class="info">
         <div class="player1">
-          <h2>Player 1</h2>
-          <div class="score"></div>
+          <h3><button id="p1-name"></button></h3>
+          <div class="score1"></div>
         </div>
         <div class="player2">
-          <h2>Player 2</h2>
-          <div class="score"></div>
+          <h3><button id="p2-name"></button></h3>
+          <div class="score2"></div>
         </div>
         <div class="turn">
           <h1 class="turn-header"></h1>
@@ -27,7 +27,43 @@
     </div>
     <div id="popup-container"></div>
     <div id="popup-overlay"></div>
-    <div class="dialog"></div>
+    <div id="dialog-container">
+      <dialog>
+        <form id="continue" class="form">
+          <button autofocus type="button" id="yes">Continue?</button>
+          <button
+            type="button"
+            onclick="this.closest('dialog').close('cancel')"
+            class="close-dialog"
+          >
+            x
+          </button>
+        </form>
+        <form id="name-change" class="form">
+          <input
+            autofocus
+            type="text"
+            id="name"
+            name="name"
+            placeholder="Player name"
+            value=""
+            size="32"
+            maxlength="10"
+            required
+          />
+          <button name="submit" type="submit" class="submit-dialog">
+            Submit
+          </button>
+          <button
+            type="button"
+            onclick="this.closest('dialog').close('cancel')"
+            class="close-dialog"
+          >
+            x
+          </button>
+        </form>
+      </dialog>
+    </div>
     <script src="script.js"></script>
   </body>
 </html>

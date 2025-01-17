@@ -13,6 +13,11 @@ body {
 }
 
 h1 {
+  font-family: "Press Start 2P", system-ui, -apple-system;
+  text-shadow: 0px 3px 0px #000;
+  color: #f71500;
+  font-size: 40px;
+  padding: 30px 0 20px 0;
   text-align: center;
 }
 
@@ -25,7 +30,7 @@ h1 {
   align-items: center;
   justify-content: flex-start;
   flex-direction: column;
-  gap: 50px;
+  gap: 40px;
   box-shadow: rgba(0, 0, 0, 0.56) 0px 22px 70px 4px;
   padding: 1%;
   border-radius: 5px;
@@ -95,7 +100,7 @@ h1 {
   justify-content: center;
   padding: 10px 0 0 0;
   grid-area: turn;
-  gap: 20px;
+  gap: 30px;
 }
 
 .turn-header {
@@ -104,14 +109,6 @@ h1 {
   font-size: 30px;
   text-shadow: 0px 1px 1px #000;
   padding: 0;
-}
-
-h1 {
-  font-family: "Press Start 2P", system-ui, -apple-system;
-  text-shadow: 0px 3px 0px #000;
-  color: #f71500;
-  font-size: 40px;
-  padding: 40px;
 }
 
 #restart {
@@ -169,6 +166,27 @@ button:hover {
   border-radius: 5px;
 }
 
+#p1-name,
+#p2-name {
+  background: none;
+  border: none;
+  color: #d41200;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+#p1-name:hover,
+#p2-name:hover {
+  color: #950c00;
+}
+
+.score1,
+.score2 {
+  text-align: center;
+}
+
 #popup-container {
   position: fixed;
   top: 50%;
@@ -214,4 +232,126 @@ button:hover {
   background: rgba(0, 0, 0, 0.2);
   z-index: 1000; /* Below the pop-up but above everything else */
   display: none;
+}
+
+/* Dialog */
+
+dialog {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 180px auto;
+  padding: 0;
+  inset: 0;
+  z-index: 0;
+  height: 100px;
+  width: 500px;
+  overflow: hidden;
+  color: #ffffffcc;
+  background: #8a2387;
+  background: linear-gradient(to right, #f27121, #e94057, #8a2387);
+  text-align: center;
+  border: 1px solid #696969;
+  border-radius: 3%;
+  box-shadow: 10px 5px 5px rgba(101, 101, 101, 0.694);
+  transition: opacity 0.5s ease, visibility 0.5s;
+}
+
+dialog:not([open]) {
+  pointer-events: none;
+  opacity: 0;
+}
+
+dialog::backdrop {
+  backdrop-filter: blur(2px);
+}
+
+dialog::backdrop {
+  transition: backdrop-filter 0.5s ease;
+}
+
+.form {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form.active {
+  display: grid;
+}
+
+#continue {
+  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-areas:
+    " . . . . close"
+    " . continue continue continue ."
+    " . . . . .";
+  justify-items: center;
+  width: inherit;
+  height: inherit;
+}
+
+#name-change {
+  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-areas:
+    " . input input input close"
+    " . input input input ."
+    " . submit submit submit .";
+  justify-items: center;
+  width: inherit;
+  height: inherit;
+}
+
+#yes {
+  grid-area: continue;
+  min-width: 300px;
+}
+
+.close-dialog {
+  grid-area: close;
+}
+
+#continue > button,
+#name-change > button {
+  background-color: transparent;
+  border: 0;
+  color: black;
+  cursor: pointer;
+  font-family: "Press Start 2P", system-ui, -apple-system;
+  font-size: 22px;
+  letter-spacing: 2px;
+  line-height: 35px;
+  text-shadow: 0px 1px 0px #d390de;
+  outline: none;
+  overflow: hidden;
+  text-transform: uppercase;
+  transition: all 0.1s ease-in;
+  width: auto;
+  min-width: 100px;
+  height: auto;
+}
+
+#continue > button:hover,
+#name-change > button:hover {
+  text-shadow: 0px 2px 0px #0ff;
+  transition: all 0.1s ease-in;
+}
+
+#name-change > input {
+  grid-area: input;
+  width: 300px;
+  height: 35px;
+  font-size: 20px;
+  text-align: center;
+  align-self: center;
+  margin-top: 5px;
+  border-radius: 10px;
+}
+
+.submit-dialog {
+  grid-area: submit;
+  align-self: center;
+  margin-bottom: 15px;
 }
