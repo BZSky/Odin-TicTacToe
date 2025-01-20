@@ -306,8 +306,15 @@ const interface = (function ScreenController() {
   };
 
   const showPopup = (message) => {
-    const container = document.getElementById("popup-container");
-    const overlay = document.getElementById("popup-overlay");
+    let container;
+    let overlay;
+    if (message.includes("wins") || message.includes("draw")) {
+      container = document.getElementById("win-popup-container");
+      overlay = document.getElementById("win-popup-overlay");
+    } else {
+      container = document.getElementById("popup-container");
+      overlay = document.getElementById("popup-overlay");
+    }
     const popup = document.createElement("div");
     popup.classList.add("popup");
     popup.textContent = message;
